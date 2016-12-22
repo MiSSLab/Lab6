@@ -10,7 +10,7 @@
 \usepackage{listings}
 
 \lstset{basicstyle=\footnotesize\ttfamily,breaklines=true}
-\lstset{framextopmargin=50pt,frame=bottomline}
+\lstset{framextopmargin=60pt,frame=all}
 \title{Modelling and Simulation of Systems\\ \Large
 Exercise 6: Visualization of a Simulation}
 \author{Agata Radys, Paweł Cejrowski, Łukasz Myśliński}
@@ -34,37 +34,42 @@ The phenomenon will be modelled using diffusion limited aggregation (DLA) proces
 random walk due to Brownian motion and cluster together to form aggregats of such particles. Particle is colored after a time
 when it aggregated to the cluster.
 \\
-We model phenomenon in 2D.
+We model phenomenon in 2D. First, seed of "heated" particles is set on the floor (the lowest row). Then, particles are created
+10 points from the top/ceiling. And take random walk with probabilites of 0.25 to go right or left, 0.15 to go up and 0.35 to go down.
+Going down is most probable due to gravity force. When a particle has in its neighbourhood one heated particle it becomes heated as well.
+Algorithm stops when any heated particle is almost under the ceiling (above starting point). Algorithm is presented in the following pseudocode.
 
+\begin{lstlisting}[]
 
-\begin{lstlisting}[language=java,caption={Algorithm for generating consecutive steps}]
-
-N - modelled space width and height
+N // modelled space width/height
 dla = matrix[N][N]
 particles = 0
 set the bottom row as a seed
 launch = N - 10 // all particles start 10 pixels down from the top
-
 done = false
-while(!done):
+
+while (!done):
     x = random(0,N)
     y = launch;
+
     // random walk
     while (is within the considered 2D space):
+
         r = random(0,1);
         if (0    < r < 0.25) x--
         if (0.25 < r < 0.50) x++
         if (0.50 < r < 0.65) y++
         if (0.65 < r < 1) y-- // it is the biggest due to gravity force
 
-        if (neighbour of [x,y] is occupied) {
+        if (neighbour of [x,y] is occupied):
             dla[x][y] = true
             particles++
             printPixel(x, N - y - 1, assignColor(particles))
 
             if (y > launch):
                 done = true
-            break // paricle random walk finishes when it is marked
+
+            break // particle random walk finishes when it is marked
 \end{lstlisting}
 
 
