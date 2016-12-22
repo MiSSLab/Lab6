@@ -44,8 +44,8 @@ public class Main extends Application {
 
 
         int N = 160;
-        int launch = N - 10;                   // row to launch particles from
-        boolean[][] dla = new boolean[N][N];   // is cell (x, y) occupied
+        int launch = N - 10;
+        boolean[][] dla = new boolean[N][N];
 
 
         IntegerProperty particles = new SimpleIntegerProperty(0);
@@ -62,9 +62,10 @@ public class Main extends Application {
         // repeat until aggregate hits top
         final BooleanProperty done = new SimpleBooleanProperty(false);
 
-        new AnimationTimer() {
+        AnimationTimer animationTimer = new AnimationTimer() {
             @Override
             public void handle(long currentNanoTime) {
+                System.out.println(currentNanoTime);
                 if (done.get()) stop();
                 int x = (int) (N * Math.random());
                 int y = launch;
@@ -91,7 +92,8 @@ public class Main extends Application {
                     }
                 }
             }
-        }.start();
+        };
+        animationTimer.start();
 
         stage.show();
     }
