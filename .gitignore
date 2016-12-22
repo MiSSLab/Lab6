@@ -14,3 +14,5 @@ hs_err_pid*
 .idea/
 Lab6.iml
 out/
+/report/report.aux
+/report/report.log
