@@ -1,23 +1,22 @@
 package pl.edu.pg.eti.miss.dla;
 
 import javafx.animation.AnimationTimer;
-import javafx.beans.property.*;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
-import pl.edu.pg.eti.miss.dla.model.Pixel;
-import pl.edu.pg.eti.miss.dla.utils.Colors;
-import pl.edu.pg.eti.miss.dla.utils.Matrix;
-
-import org.controlsfx.control.*;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.controlsfx.control.RangeSlider;
+import pl.edu.pg.eti.miss.dla.model.Simulation;
+import pl.edu.pg.eti.miss.dla.model.Speed;
+import pl.edu.pg.eti.miss.dla.utils.SimulationPrinter2D;
 
 public class Controller {
+    private static final int FPS = 30;
+    private static final int N = 160;
     @FXML
     Canvas canvas;
     @FXML
@@ -27,121 +26,97 @@ public class Controller {
     @FXML
     Button stop;
     @FXML
+    Button clear;
+    @FXML
     TextField startTextField;
     @FXML
     TextField endTextField;
     @FXML
     Label currentText;
     @FXML
-    ChoiceBox speedChoiceBox;
+    Label maxText;
+    @FXML
+    ChoiceBox<Speed> speedChoiceBox;
 
 
-    Colors colors = new Colors();
     private AnimationTimer animationTimer;
     GraphicsContext gc;
-    private List<Pixel> diffs;
-    private List<int[][]> frames;
     private SimpleIntegerProperty frameNumber;
 
-    private static final int FPS = 30;
-    private static final int N = 160;
+    private Simulation simulation;
+
+    private SimulationPrinter2D printer;
+
+    @FXML
+    private ProgressBar progressBar;
 
     @FXML
     public void initialize() {
         initFields();
-        int launch = N - 10;
-        diffs = new ArrayList<>();
-        frames = new ArrayList<>();
-        int[][] dla = new int[N][N];
-        IntegerProperty particles = new SimpleIntegerProperty(0);
-
-        setSeed(N, dla);
-
-        final BooleanProperty done = new SimpleBooleanProperty(false);
-        while (!done.get()) {
-            if (done.get()) {
-                stop();
-                playEnable(true);
-            }
-            int x = (int) (N * Math.random());
-            int y = launch;
-
-            while (x < N - 2 && x > 1 && y < N - 2 && y > 1) {
-                double r = Math.random();
-                if (r < 0.25) x--;
-                else if (r < 0.50) x++;
-                else if (r < 0.55) y++;
-                else y--;
-
-                if (dla[x - 1][y] + dla[x + 1][y] + dla[x][y - 1] + dla[x][y + 1] +
-                        dla[x - 1][y - 1] + dla[x + 1][y + 1] + dla[x - 1][y + 1] + dla[x + 1][y - 1] > 0) {
-                    int color = (particles.intValue() / 16) % 360;
-                    dla[x][y] = color;
-                    particles.setValue(particles.intValue() + 1);
-                    diffs.add(new Pixel(x, y, colors.get(dla[x][y])));
-                    frames.add(Matrix.deepCopy(dla));
-                    if (y > launch) done.setValue(Boolean.TRUE);
-
-                    break;
-                }
-            }
-        }
 
         frameNumber = new SimpleIntegerProperty(0);
         backward.disableProperty().bind(frameNumber.isEqualTo(0));
-        currentText.textProperty().bind(frameNumber.divide(FPS).asString());
-        endTextField.textProperty().setValue(String.valueOf(frames.size() / FPS));
+        currentText.textProperty().bind(frameNumber.asString());
         animationTimer = new AnimationTimer() {
             @Override
             public void handle(long t) {
-                System.out.println(frameNumber.get());
-                if (frameNumber.get() >= 0 && frameNumber.get() < diffs.size() - 1) {
-                    Pixel pixel = diffs.get(frameNumber.get());
-                    if (!backward.isSelected()) {
-                        frameNumber.setValue(frameNumber.get() + 1);
-
-
-                        gc.setFill(pixel.getColor());
-                        gc.fillRect(4 * pixel.getX(), 4 * (N - pixel.getY() - 1), 4, 4);
-
-
+                int i = frameNumber.get();
+                int ratio = speedChoiceBox.getValue().getRatio();
+                if (i < ratio) {
+                    if (backward.isSelected()) {
+                        frameNumber.setValue(0);
+                        stop();
+                        backward.setSelected(false);
                     } else {
-                        if (frameNumber.get() > 0) {
-                            frameNumber.setValue(frameNumber.get() - 1);
-
-
-                            gc.clearRect(4 * pixel.getX(), 4 * (N - pixel.getY() - 1), 4, 4);
-
-
-                        }
+                        frameNumber.setValue(ratio);
+                    }
+                } else if (i >= simulation.getFramesCount() - ratio) {
+                    if (backward.isSelected()) {
+                        frameNumber.setValue(frameNumber.subtract(ratio).get());
+                    } else {
+                        frameNumber.setValue(simulation.getFramesCount() - 1);
+                        stop();
+                    }
+                } else {
+                    if (backward.isSelected()) {
+                        frameNumber.setValue(frameNumber.subtract(ratio).get());
+                    } else {
+                        frameNumber.setValue(frameNumber.add(ratio).get());
                     }
                 }
-                if (frameNumber.get() == 0 || frameNumber.get() == diffs.size() - 1) {
-                    stop();
-                    playEnable(true);
-                    backward.setSelected(false);
-                }
+                printer.print(i);
+            }
+
+            @Override
+            public void stop() {
+                super.stop();
+                playEnable(true);
             }
         };
-
-        playEnable(true);
-    }
-
-    private void setSeed(int n, int[][] dla) {
-        for (int x = 0; x < n; x++) {
-            dla[x][0] = 1;
-            colors.setFill(gc, 1);
-            gc.fillRect(4 * x, 4 * (n - 1), 4, 4);
-        }
     }
 
     private void initFields() {
-        colors = new Colors();
-        speedChoiceBox.setItems(FXCollections.observableArrayList(
-                "x 0.5", "x 1", "x 2", "x 4", "x 8", "x 16")
-        );
-        speedChoiceBox.setValue("x 1");
+        playEnable(false);
+        stop.setDisable(true);
+        clear.setDisable(true);
+
+        simulation = new Simulation(N);
+        simulation.setOnSucceeded((x) -> {
+            playEnable(true);
+            progressBar.setVisible(false);
+            endTextField.textProperty().setValue(String.valueOf(simulation.getFramesCount() - 1));
+            maxText.textProperty().setValue(String.valueOf(simulation.getFramesCount() - 1));
+        });
+        progressBar.progressProperty().bind(simulation.progressProperty());
+        simulation.start();
+
         gc = canvas.getGraphicsContext2D();
+        printer = new SimulationPrinter2D(simulation, gc, N);
+        Speed speed1 = new Speed(1);
+        speedChoiceBox.setItems(FXCollections.observableArrayList(
+                speed1, new Speed(2), new Speed(4), new Speed(8), new Speed(16))
+        );
+        speedChoiceBox.setValue(speed1);
         startTextField.textProperty().addListener(forceNumberListener);
         endTextField.textProperty().addListener(forceNumberListener);
         final RangeSlider hSlider = new RangeSlider(0, 100, 10, 90);
@@ -158,13 +133,38 @@ public class Controller {
         startTextField.setDisable(!enable);
         endTextField.setDisable(!enable);
         speedChoiceBox.setDisable(!enable);
+        clear.setDisable(false);
     }
 
 
     @FXML
     public void play() {
-        animationTimer.start();
-        playEnable(false);
+        if (validateStartAndEnd()) {
+            animationTimer.start();
+            frameNumber.setValue(Integer.valueOf(startTextField.textProperty().getValue()));
+            playEnable(false);
+        }
+    }
+
+    private boolean validateStartAndEnd() {
+        Integer start = Integer.valueOf(startTextField.textProperty().getValue());
+        Integer end = Integer.valueOf(endTextField.textProperty().getValue());
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Wrong values");
+        if (start > simulation.getFramesCount() || end > simulation.getFramesCount()) {
+            alert.setHeaderText("Start/End greater than number of frames");
+            alert.showAndWait();
+            return false;
+        } else if (start < 0 || end < 0) {
+            alert.setHeaderText("Start/End lower than 0");
+            alert.showAndWait();
+            return false;
+        } else if (start > end) {
+            alert.setHeaderText("Start greater than end");
+            alert.showAndWait();
+            return false;
+        }
+        return true;
     }
 
     @FXML
@@ -179,11 +179,11 @@ public class Controller {
         playEnable(true);
         backward.setSelected(false);
         frameNumber.setValue(0);
-        gc.clearRect(0, 0, 640, 640);
+        printer.print(0);
     }
+
     ChangeListener<String> forceNumberListener = (observable, oldValue, newValue) -> {
         if (!newValue.matches("\\d*"))
             ((StringProperty) observable).set(oldValue);
     };
-
 }

@@ -1,14 +1,11 @@
 package pl.edu.pg.eti.miss.dla.model;
 
-import javafx.scene.paint.*;
-
-
 public class Pixel {
     private int x;
     private int y;
-    private Color color;
+    private int color;
 
-    public Pixel(int x, int y, Color color) {
+    public Pixel(int x, int y, int color) {
         this.x = x;
         this.y = y;
         this.color = color;
@@ -22,7 +19,7 @@ public class Pixel {
         return y;
     }
 
-    public Color getColor() {
+    public int getColor() {
         return color;
     }
 }

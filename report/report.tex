@@ -36,7 +36,7 @@ when it aggregated to the cluster.
 \\
 We model phenomenon in 2D. First, seed of "heated" particles is set on the floor (the lowest row). Then, particles are created
 10 points from the top/ceiling. And take random walk with probabilites of 0.25 to go right or left, 0.15 to go up and 0.35 to go down.
-Going down is most probable due to gravity force. When a particle has in its neighbourhood one heated particle it becomes heated as well.
+Going down is most probable due to gravity force. When a particle has in its neighbourhood one heated particle, it becomes heated as well.
 Algorithm stops when any heated particle is almost under the ceiling (above starting point). Algorithm is presented in the following pseudocode.
 
 \begin{lstlisting}[]
@@ -69,7 +69,7 @@ while (!done):
             if (y > launch):
                 done = true
 
-            break // particle random walk finishes when it is marked
+            break // particle random walk finishes when it found neighbour
 \end{lstlisting}
 
 
