@@ -1,0 +1,19 @@
+#stop {
+  -fx-background-image: url('/icons/stop.png');
+    -fx-background-size: 20px;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+}
+
+#play {
+  -fx-background-image: url('/icons/play.png');
+    -fx-background-size: 20px;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+}
+#clear {
+  -fx-background-image: url('/icons/clear.png');
+    -fx-background-size: 20px;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+}
